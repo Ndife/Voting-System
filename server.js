@@ -1,0 +1,116 @@
+const express = require('express');
+const cors = require('cors');
+const mysql = require('mysql');
+const bodyParser = require('body-parser');
+const path = require('path');
+
+const app = express();
+
+// connection configuration
+const connection = mysql.createConnection({
+     host: 'localhost',
+     user: 'root',
+     password: '',
+     database: 'bincom_test'
+})
+
+connection.connect(err => {
+    if(err){
+        return err;
+    }
+})
+
+
+//BodyParser Middleware 
+app.use(bodyParser.json());
+app.use(cors());
+app.use(bodyParser.urlencoded({extended: false}));
+
+app.get('/individualPollUnit', (req, res) => {
+    const SELECT_ALL_POLLING_RESULT_QUERY = 'SELECT `polling_unit_uniqueid`, `party_abbreviation`, `party_score` FROM `announced_pu_results` ';
+    connection.query(SELECT_ALL_POLLING_RESULT_QUERY,(err, result) => {
+        if(err){
+            return res.send(err)
+        }else {
+            return res.send({
+                data: result
+            })
+        }
+    })
+});
+
+// show polling results with their respective local government
+app.get('/viewPollingResults/', (req, res) => {
+    const SELECT_POLLING_UNIT_QUERYs = `
+    SELECT 
+    a.polling_unit_uniqueid, 
+    a.party_abbreviation,
+    a.party_score,
+    p.lga_id,
+    p.uniqueid, 
+    p.polling_unit_number
+
+    FROM
+    announced_pu_results a
+    INNER JOIN polling_unit p 
+    ON p.uniqueid = a.polling_unit_uniqueid
+     `;
+
+    connection.query(SELECT_POLLING_UNIT_QUERYs,(err, result) => {
+        if(err) res.send(err)
+        total = calculateSum(result)
+        res.send(result)
+    })
+});
+
+// search and get a particular lga with their total 
+app.get('/getLGA/:id', (req, res) => {
+    const lgaId = req.params.id;
+    const SELECT_POLLING_UNIT_QUERYs = `
+    SELECT 
+    a.polling_unit_uniqueid, 
+    a.party_abbreviation,
+    a.party_score,
+    p.lga_id,
+    p.uniqueid, 
+    p.polling_unit_number
+
+    FROM
+    announced_pu_results a
+    INNER JOIN polling_unit p 
+    ON p.uniqueid = a.polling_unit_uniqueid
+    WHERE
+    p.lga_id = ${lgaId} `;
+   
+    connection.query(SELECT_POLLING_UNIT_QUERYs,(err, result) => {
+        if(err) res.send(err)
+        total = calculateSum(result)
+        res.send({
+            data: result,
+            total,
+        })
+    })
+});
+
+function calculateSum(value){
+    const Pvalues = value.map(({party_score}) => party_score)
+    Ptotal = Pvalues.reduce((a,b) => a+b)
+    return Ptotal;
+}
+
+// Serve static assets if in production
+if(process.env.NODE_ENV === 'production'){
+    
+    // Set static folder
+    app.use(express.static('client/build'));
+
+    app.get('*', (req, res) =>{
+        res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'));
+    });
+}
+
+
+
+app.listen(4000, () => {
+    console.log('products server listening on port 4000')
+})
