@@ -26,6 +26,7 @@ app.use(bodyParser.json());
 app.use(cors());
 app.use(bodyParser.urlencoded({extended: false}));
 
+// show the list of all polling unit from the annouced_pu_results
 app.get('/individualPollUnit', (req, res) => {
     const SELECT_ALL_POLLING_RESULT_QUERY = 'SELECT `polling_unit_uniqueid`, `party_abbreviation`, `party_score` FROM `announced_pu_results` ';
     connection.query(SELECT_ALL_POLLING_RESULT_QUERY,(err, result) => {
@@ -97,6 +98,21 @@ function calculateSum(value){
     Ptotal = Pvalues.reduce((a,b) => a+b)
     return Ptotal;
 }
+
+ // add new polling unit
+app.post('/add', (req, res) => {
+    const ADD_QUERY = 'INSERT into  ';
+    connection.query(ADD_QUERY,(err, result) => {
+        if(err){
+            return res.send(err)
+        }else {
+            return res.send({
+                success: true
+                data: result
+            })
+        }
+    })
+});
 
 // Serve static assets if in production
 if(process.env.NODE_ENV === 'production'){
