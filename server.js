@@ -28,7 +28,19 @@ app.use(bodyParser.urlencoded({extended: false}));
 
 // show the list of all polling unit from the annouced_pu_results
 app.get('/individualPollUnit', (req, res) => {
-    const SELECT_ALL_POLLING_RESULT_QUERY = 'SELECT `polling_unit_uniqueid`, `party_abbreviation`, `party_score` FROM `announced_pu_results` ';
+    const SELECT_ALL_POLLING_RESULT_QUERY = `
+    SELECT
+    a.result_id, 
+    a.polling_unit_uniqueid,
+    a.party_abbreviation, 
+    a.party_score,
+    p.polling_unit_name,
+    p.polling_unit_number
+
+    FROM 
+    announced_pu_results a
+    INNER JOIN polling_unit p`;
+
     connection.query(SELECT_ALL_POLLING_RESULT_QUERY,(err, result) => {
         if(err){
             return res.send(err)
@@ -40,38 +52,26 @@ app.get('/individualPollUnit', (req, res) => {
     })
 });
 
-// show polling results with their respective local government
-app.get('/viewPollingResults/', (req, res) => {
-    const SELECT_POLLING_UNIT_QUERYs = `
-    SELECT 
-    a.polling_unit_uniqueid, 
-    a.party_abbreviation,
-    a.party_score,
-    p.lga_id,
-    p.uniqueid, 
-    p.polling_unit_number
+app.get('/searchlga', (req, res) => {
+    const name = req.params.name;
+    const SELECT_LGA_QUERY = `SELECT lga_name, lga_id FROM lga `;
 
-    FROM
-    announced_pu_results a
-    INNER JOIN polling_unit p 
-    ON p.uniqueid = a.polling_unit_uniqueid
-     `;
-
-    connection.query(SELECT_POLLING_UNIT_QUERYs,(err, result) => {
+    connection.query(SELECT_LGA_QUERY,(err, lga) => {
         if(err) res.send(err)
-        total = calculateSum(result)
-        res.send(result)
+        res.send(lga)
     })
 });
 
+
 // search and get a particular lga with their total 
-app.get('/getLGA/:id', (req, res) => {
+app.get('/getTotal/:id', (req, res) => {
     const lgaId = req.params.id;
-    const SELECT_POLLING_UNIT_QUERYs = `
+    const SELECT_POLLING_UNIT_QUERY = `
     SELECT 
     a.polling_unit_uniqueid, 
     a.party_abbreviation,
     a.party_score,
+    a.result_id,
     p.lga_id,
     p.uniqueid, 
     p.polling_unit_number
@@ -83,7 +83,7 @@ app.get('/getLGA/:id', (req, res) => {
     WHERE
     p.lga_id = ${lgaId} `;
    
-    connection.query(SELECT_POLLING_UNIT_QUERYs,(err, result) => {
+    connection.query(SELECT_POLLING_UNIT_QUERY,(err, result) => {
         if(err) res.send(err)
         total = calculateSum(result)
         res.send({
@@ -94,6 +94,9 @@ app.get('/getLGA/:id', (req, res) => {
 });
 
 function calculateSum(value){
+    if(value.length <1){
+        return 0;
+    }
     const Pvalues = value.map(({party_score}) => party_score)
     Ptotal = Pvalues.reduce((a,b) => a+b)
     return Ptotal;
@@ -107,7 +110,7 @@ app.post('/add', (req, res) => {
             return res.send(err)
         }else {
             return res.send({
-                success: true
+                success: true,
                 data: result
             })
         }
