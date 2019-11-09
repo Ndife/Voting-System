@@ -9,18 +9,30 @@ function calculateSum(value){
 
 
 
+// mysql> CREATE TABLE IF NOT EXISTS `customers` (
+//     id int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+//     email varchar(255) NOT NULL,
+//     name varchar(255) NOT NULL,
+//     active BOOLEAN DEFAULT false
+//   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-//   function returnValue(...values){
-//     {values[0].slice(values[1], values[2]).map((item, index) => {
-//         return (<tr  key={item.values[8]}>
-//                 <td>#</td>
-//                 <td>{item.values[3]}</td>
-//                 <td>{item.values[4]}</td>
-//                 <td>{item.values[5]}</td>
-//                 <td>{item.values[6]}</td>
-//                 <td>{item.values[7]}</td>
-//                 </tr>
-//                 );
-//       })}
-//   }
-  
+
+module.exports = {
+    HOST: "us-cdbr-iron-east-02.cleardb.net",
+    USER: "b7e2437887xxxa",
+    PASSWORD: "0200xxx6",
+    DB: "heroku_7643ec736354xxx"
+  };
+
+
+  const mysql = require("mysql");
+const dbConfig = require("../config/db.config.js");
+
+var connection = mysql.createPool({
+  host: dbConfig.HOST,
+  user: dbConfig.USER,
+  password: dbConfig.PASSWORD,
+  database: dbConfig.DB
+});
+
+module.exports = connection;
