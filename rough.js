@@ -7,7 +7,6 @@
 // // console.log(calculateSum(a))
 
 
-
 // function strangeWords(n,v) {
 //     let usedNumber = []
 //     count = 0;
